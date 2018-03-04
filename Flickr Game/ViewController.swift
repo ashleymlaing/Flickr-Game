@@ -8,7 +8,7 @@
 
 import UIKit
 
-class ViewController: UIViewController {
+class ViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
 
     @IBOutlet weak var txtTitle: UILabel!
     
@@ -16,7 +16,9 @@ class ViewController: UIViewController {
     
     @IBOutlet weak var btnChange: UIButton!
     
-    @IBOutlet weak var btnAnswer: UIButton!
+    //@IBOutlet weak var btnAnswer: UIButton!
+    
+    @IBOutlet weak var answerTable: UITableView!
     
     @IBOutlet weak var imgDisplay: UIImageView!
     
@@ -91,6 +93,12 @@ class ViewController: UIViewController {
     
     var selectedCountry = "United States"
     
+    var guesses: [String] = []
+    
+    var guessedCountry: String?
+    
+    var shouldShowAnswer: false
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
@@ -100,15 +108,27 @@ class ViewController: UIViewController {
         
         btnChange.setTitle("Play", for: .normal)
         
-        btnAnswer.setTitle("Get Answer", for: .normal)
+        //btnAnswer.setTitle("Get Answer", for: .normal)
     }
     
     @IBAction func btnClicked(_ sender: Any) {
         
+        
+        
         let count = countries.count
         let index = Int(arc4random_uniform(UInt32(count)))
         
+        var uniqueGuesses: Set<String> = []
+        uniqueGuesses.insert(selectedCountry)
         
+        while uniqueGuesses.count < 4 {
+            let randomIndex = Int(arc4random_uniform(UInt32(count)))
+            uniqueGuesses.insert(countries[randomIndex])
+        }
+        
+        guesses = Array(uniqueGuesses)
+        
+        answerTable.reloadData()
         
         selectedCountry = countries[index]
         
@@ -179,5 +199,53 @@ class ViewController: UIViewController {
         imageTask.resume()
     }
     
+    // MARK: - UITableViewDataSource Methods
+    
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return guesses.count
+    }
+    
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        
+        let cell = tableView.dequeueReusableCell(withIdentifier: "CountryCellIdentifier", for: indexPath)
+        
+        cell.backgroundColor = UIColor.white
+        cell.textLabel?.text = UIColor.darkText
+        
+        if guesses.count > indexPath.row {
+            let guess = guesses[indexPath.row]
+            cell.textLabel?.text = guess
+            
+            if shouldShowAnswer {
+                if guess == selectedCountry{
+                    cell.backgroundColor = .green
+                    cell.textLabel?.textColor = .white
+                } else if (guess == guessedCountry){
+                    cell.backgroundColor = .red
+                    cell.textLabel?.textColor = .white
+                }
+            }
+            
+        }
+        return cell
+    }
+    
+    // MARK: - UITableViewDelegate Methods
+    
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        
+        shouldShowAnswer = true
+        
+        if guesses.count > indexPath.row {
+            guessedCountry = guesses[indexPath.row]
+        }
+        if guessedCountry == selectedCountry {
+            txtAnswer.text = "Correct"
+        } else {
+            txtAnswer.text = "Incorrect"
+        }
+        
+        tableView.reloadData()
+    }
 }
 
